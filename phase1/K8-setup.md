@@ -2,9 +2,7 @@
 
 - Kuberenetes Setup
 - Connect your machines to Putty or Mobaxtreme
-- Take-Two Ubuntu 20.04 instances one for k8s master and the other one for worker.
-- Install Kubectl on Jenkins machine also.
-- Kubectl is to be installed on Jenkins also
+- Take-Three Ubuntu 20.04 instances one for k8s master and the other two for worker.
 
 ```bash
 sudo apt update
@@ -28,10 +26,15 @@ sudo hostnamectl set-hostname K8s-Worker
 
 - Part 2 ------------Both Master & Node ------------
 
+Update System Packages
+
 ```bash
 sudo apt-get update 
 sudo apt-get upgrade -y
+```
+Install & Configure containerd (Container Runtime)
 
+```bash
 sudo apt install -y containerd
 
 sudo mkdir -p /etc/containerd
@@ -41,10 +44,16 @@ sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/conf
 
 sudo systemctl restart containerd
 sudo systemctl enable containerd
+```
+Load Required Kernel Modules
 
+```bash
 sudo modprobe overlay
 sudo modprobe br_netfilter
+```
+Configure Sysctl Parameters for Kubernetes Networking
 
+```bash
 cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-iptables = 1
 net.ipv4.ip_forward = 1
@@ -52,9 +61,15 @@ net.bridge.bridge-nf-call-ip6tables = 1
 EOF
 
 sudo sysctl --system
+```
+Install Required Dependencies
 
+```bash
 sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+```
+Add Kubernetes Repository & GPG Key
 
+```bash
 sudo mkdir -p -m 755 /etc/apt/keyrings
 
 curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | \
@@ -62,7 +77,10 @@ sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 
 echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /' | \
 sudo tee /etc/apt/sources.list.d/kubernetes.list
+```
+Install Kubernetes Components
 
+```bash
 sudo apt-get update
 
 sudo apt install -y kubelet kubeadm kubectl
