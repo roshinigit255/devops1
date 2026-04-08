@@ -106,9 +106,5 @@ kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 sudo kubeadm join <master-node-ip>:<master-node-port> --token <token> --discovery-token-ca-cert-hash <hash>
 ```
 
-- Copy the config file to Jenkins master or the local file manager and save it
-- copy it and save it in documents or another folder save it as secret-file.txt
-- Note: create a secret-file.txt in your file explorer save the config in it and use this at the kubernetes credential section.
-- Install Kubernetes Plugin, Once it's installed successfully
-- goto manage Jenkins --> manage credentials --> Click on Jenkins global --> add credentials
+
 
