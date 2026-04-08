@@ -80,3 +80,37 @@ Then, you can run the script using:
 ```bash
 ./install_docker.sh
 ```
+## Installing Trivy on jenkins to perform file system scan 
+
+```bash
+#Update System
+sudo apt-get update
+
+#Install Required Packages
+sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+
+#Add Trivy Repository & GPG Key
+wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | \
+sudo gpg --dearmor -o /usr/share/keyrings/trivy.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] \
+https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | \
+sudo tee /etc/apt/sources.list.d/trivy.list
+
+#Install Trivy
+sudo apt-get update
+sudo apt-get install -y trivy
+
+```
+
+Save this script in a file, for example, `install_trivy.sh`, and make it executable using:
+
+```bash
+chmod +x install_trivy.sh
+```
+
+hen, you can run the script using:
+
+```bash
+./install_trivy.sh
+```
