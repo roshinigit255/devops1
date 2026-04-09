@@ -57,7 +57,7 @@ pipeline {
         maven 'maven3'
     }
 
-    enviornment {
+    environment {
         SCANNER_HOME= tool 'sonar-scanner'
     }
 
@@ -186,7 +186,7 @@ pipeline {
             emailext (
                 subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
                 body: body,
-                to: 'jaiswaladi246@gmail.com',
+                to: 'roshinis199@gmail.com',
                 from: 'jenkins@example.com',
                 replyTo: 'jenkins@example.com',
                 mimeType: 'text/html',
