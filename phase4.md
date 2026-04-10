@@ -15,4 +15,6 @@ Switch to promatheus directory and exicute it ,u can acess the server through po
 sudo apt-get install -y adduser libfontconfig1 musl
 wget https://dl.grafana.com/grafana-enterprise/release/12.4.2/grafana-enterprise_12.4.2_23531306697_linux_amd64.deb
 sudo dpkg -i grafana-enterprise_12.4.2_23531306697_linux_amd64.deb
+sudo /bin/systemctl start grafana-server
 ```
+Can acess the grafana UI through port number 3000.
