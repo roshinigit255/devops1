@@ -58,118 +58,137 @@ pipeline {
     }
 
     environment {
-        SCANNER_HOME= tool 'sonar-scanner'
+        SCANNER_HOME = tool 'sonar-scanner'
     }
 
     stages {
+
         stage('Git Checkout') {
             steps {
-               git branch: 'main', credentialsId: 'git-cred', url: 'https://github.com/roshinigit255/devops1.git'
+                git branch: 'main', credentialsId: 'git-cred', url: 'https://github.com/roshinigit255/devops1.git'
             }
         }
-        
+
         stage('Compile') {
             steps {
-                sh "mvn compile"
+                dir('Boardgame-project') {
+                    sh 'mvn compile'
+                }
             }
         }
-        
+
         stage('Test') {
             steps {
-                sh "mvn test"
+                dir('Boardgame-project') {
+                    sh 'mvn test'
+                }
             }
         }
-        
+
         stage('File System Scan') {
             steps {
                 sh "trivy fs --format table -o trivy-fs-report.html ."
             }
         }
-        
-        stage('SonarQube Analsyis') {
+
+        stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('sonar') {
-                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=BoardGame -Dsonar.projectKey=BoardGame \
-                            -Dsonar.java.binaries=. '''
+                dir('Boardgame-project') {
+                    withSonarQubeEnv('sonar') {
+                        sh '''
+                        $SCANNER_HOME/bin/sonar-scanner \
+                        -Dsonar.projectName=BoardGame \
+                        -Dsonar.projectKey=BoardGame \
+                        -Dsonar.java.binaries=.
+                        '''
+                    }
                 }
             }
         }
-        
+
         stage('Quality Gate') {
             steps {
                 script {
-                  waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token' 
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token'
                 }
             }
         }
-        
-        stage('Build') {
+
+        stage('Package') {
             steps {
-               sh "mvn package"
+                dir('Boardgame-project') {
+                    sh 'mvn package'
+                }
             }
         }
-        
+
         stage('Publish To Nexus') {
             steps {
-               withMaven(globalMavenSettingsConfig: 'global-settings', jdk: 'jdk17', maven: 'maven3', mavenSettingsConfig: '', traceability: true) {
-                    sh "mvn deploy"
+                dir('Boardgame-project') {
+                    withMaven(globalMavenSettingsConfig: 'global-settings', jdk: 'jdk17', maven: 'maven3', traceability: true) {
+                        sh 'mvn deploy'
+                    }
                 }
             }
         }
-        
-        stage('Build & Tag Docker Image') {
+
+        stage('Build Docker Image') {
             steps {
-               script {
-                   withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
-                            sh "docker build -t roshini456/boardgame:latest ."
+                script {
+                    withDockerRegistry(credentialsId: 'docker-cred') {
+                        sh "docker build -t roshini456/boardgame:latest Boardgame-project"
                     }
-               }
+                }
             }
         }
-        
+
         stage('Docker Image Scan') {
             steps {
-                sh "trivy image --format table -o trivy-image-report.html roshini456/boardgame:latest "
+                sh "trivy image --scanners vuln --severity HIGH,CRITICAL --no-progress -o trivy-image-report.html roshini456/boardgame:latest"
             }
         }
-        
+
         stage('Push Docker Image') {
             steps {
-               script {
-                   withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
-                            sh "docker push roshini456/boardgame:latest"
+                script {
+                    withDockerRegistry(credentialsId: 'docker-cred') {
+                        sh "docker push roshini456/boardgame:latest"
                     }
-               }
-            }
-        }
-        stage('Deploy To Kubernetes') {
-            steps {
-               withKubeConfig(caCertificate: '', clusterName: 'kubernetes', contextName: '', credentialsId: 'k8-cred', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://172.31.46.194:6443') {
-                        sh "kubectl apply -f deployment-service.yaml"
                 }
             }
         }
-        
-        stage('Verify the Deployment') {
-            steps {
-               withKubeConfig(caCertificate: '', clusterName: 'kubernetes', contextName: '', credentialsId: 'k8-cred', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://172.31.8.146:6443') {
-                        sh "kubectl get pods -n webapps"
-                        sh "kubectl get svc -n webapps"
-                }
-            }
-        }
-        
-        
-    }
-    post {
-    always {
-        script {
-            def jobName = env.JOB_NAME
-            def buildNumber = env.BUILD_NUMBER
-            def pipelineStatus = currentBuild.result ?: 'UNKNOWN'
-            def bannerColor = pipelineStatus.toUpperCase() == 'SUCCESS' ? 'green' : 'red'
 
-            def body = """
+        stage('Deploy to Kubernetes') {
+            steps {
+                dir('Boardgame-project') {
+                    withKubeConfig(credentialsId: 'k8-cred', namespace: 'webapps', serverUrl: 'https://172.31.46.194:6443') {
+                        sh '''
+                        kubectl apply -f deployment-service.yaml
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                withKubeConfig(credentialsId: 'k8-cred', namespace: 'webapps', serverUrl: 'https://172.31.46.194:6443') {
+                    sh "kubectl get pods -n webapps"
+                    sh "kubectl get svc -n webapps"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                def jobName = env.JOB_NAME
+                def buildNumber = env.BUILD_NUMBER
+                def pipelineStatus = currentBuild.result ?: 'UNKNOWN'
+                def bannerColor = pipelineStatus.toUpperCase() == 'SUCCESS' ? 'green' : 'red'
+
+                def body = """
                 <html>
                 <body>
                 <div style="border: 4px solid ${bannerColor}; padding: 10px;">
@@ -181,20 +200,16 @@ pipeline {
                 </div>
                 </body>
                 </html>
-            """
+                """
 
-            emailext (
-                subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
-                body: body,
-                to: 'roshinis199@gmail.com',
-                from: 'jenkins@example.com',
-                replyTo: 'jenkins@example.com',
-                mimeType: 'text/html',
-                attachmentsPattern: 'trivy-image-report.html'
-            )
+                emailext (
+                    subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
+                    body: body,
+                    to: 'roshinis199@gmail.com',
+                    mimeType: 'text/html',
+                    attachmentsPattern: 'trivy-image-report.html'
+                )
+            }
         }
     }
 }
-
-}
-```
