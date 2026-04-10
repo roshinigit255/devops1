@@ -8,7 +8,7 @@
 sudo apt install fontconfig openjdk-21-jre
 
 # Download Jenkins GPG key
-udo wget -O /etc/apt/keyrings/jenkins-keyring.asc \
+sudo wget -O /etc/apt/keyrings/jenkins-keyring.asc \
   https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
 
 # Add Jenkins repository to package manager sources
