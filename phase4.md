@@ -38,6 +38,8 @@ sudo /bin/systemctl start grafana-server
 ```
 Can acess the grafana UI through port number 3000.
 
+We can create datasource for prometheus and import dashborad ,can moniter the metrics.
+
 - Install Blackbox exporter
 
 ```bash
@@ -46,6 +48,7 @@ tar -xvf blackbox_exporter-0.28.0.linux-amd64.tar.gz
 rm -rf blackbox_exporter-0.28.0.linux-amd64.tar.gz 
 ```
 Switch to blackbox directory and exicute ./blackbox_exporter ,u can acess the server through port 9115.
+
 
 
 
