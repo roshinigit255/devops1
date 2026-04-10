@@ -18,3 +18,12 @@ sudo dpkg -i grafana-enterprise_12.4.2_23531306697_linux_amd64.deb
 sudo /bin/systemctl start grafana-server
 ```
 Can acess the grafana UI through port number 3000.
+
+- Install Blackbox exporter
+
+```bash
+wget https://github.com/prometheus/blackbox_exporter/releases/download/v0.28.0/blackbox_exporter-0.28.0.linux-amd64.tar.gz
+tar -xvf blackbox_exporter-0.28.0.linux-amd64.tar.gz 
+rm -rf blackbox_exporter-0.28.0.linux-amd64.tar.gz 
+```
+
